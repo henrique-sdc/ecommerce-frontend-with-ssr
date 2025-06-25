@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Tabela de produtos
+model Product {
+  id String @id @default(uuid())
+  name String
+  priceInCents Int // Usado para pagamentos, em centavos pois é mais fácil de integrar com o Stripe
+  filePath String // Arquivos para download
+  imagePath String // Imagem para mostrar na loja
+  description String
+  isAvailableForPurchase Boolean @default(true) //  Para saber se o produto está disponível para compra
+  createdAt DateTime @default(now()) // Data de criação para questões de tracking
+  updatedAt DateTime @updatedAt // Data de atualização para questões de tracking
+  orders Order[]
+  downloadVerifications DownloadVerification[]
+}
+
+// Tabela de usuários
+model User {
+  id String @id @default(uuid())
+  email String @unique 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders Order[]
+}
+
+// Tabela de pedidos
+model Order {
+  id String @id @default(uuid())
+  pricePaidInCents Int // Para trackear se uma vez custou uma coisa e agora outra
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+  userId String // Para linkar com o usuário
+  productId String // Para linkar com o produto
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Ligação de tabelas
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict) // Ligação de tabelas
+}
+
+// Tabela de verificação de download
+model DownloadVerification {
+  id String @id @default(uuid())
+  expiresAt DateTime // Para saber até quando o download é válido
+  createAt DateTime @default(now())
+  productId String // Para linkar com o produto
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade) // Ligação de tabelas
+}
